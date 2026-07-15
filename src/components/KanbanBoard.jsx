@@ -47,7 +47,7 @@ export default function KanbanBoard({ contacts, onCardUpdate }) {
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="kanban-board">
         {STAGES.map((stage) => {
-          const stageContacts = contacts.filter((c) => c.status === stage);
+          const stageContacts = contacts.filter((c) => c.status?.toLowerCase() === stage.toLowerCase());
           return (
             <Droppable key={stage} droppableId={stage}>
               {(provided, snapshot) => (

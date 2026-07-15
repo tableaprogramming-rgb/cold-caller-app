@@ -72,6 +72,19 @@ npm run lint       # Run Oxlint (syntax/style checks)
 node scripts/import-csv.mjs  # One-time: import ~1,900 contacts from CSVs into Supabase
 ```
 
+## Authentication & Access Control (added)
+
+The app now requires Supabase Auth. Key points:
+
+- **RLS is now ENABLED** on `contacts` (this reverses the old "RLS must be disabled" note below — that only applied to the pre-auth anon-key setup). Access is scoped per-user via `contacts.user_id` + the `contact_access` sharing table.
+- **Schema**: run `supabase/schema.sql` in the Supabase SQL Editor. It adds `contacts.user_id`, and tables `user_profiles`, `contact_access`, `auth_attempts`, `pending_invites`, plus a trigger that auto-creates a `user_profiles` row on signup.
+- **Existing 1,900 contacts** have `user_id = NULL` and are invisible under RLS until assigned. Assign them to your admin user with the commented `UPDATE` at the bottom of `schema.sql`.
+- **Roles**: owner (full), editor (edit shared), viewer (read-only). Computed client-side in `src/lib/access.js` and enforced server-side by RLS policies.
+- **Rate limiting**: `src/lib/rateLimiter.js` (5 attempts / 15 min → 5 min lockout) using `auth_attempts`.
+- **Invites**: admin invites from Account Settings create a real auth account with a generated temp password + a forced first-login password change (`FirstLoginModal`).
+- **Key auth files**: `src/lib/authHelpers.js`, `src/lib/rateLimiter.js`, `src/lib/access.js`, `src/pages/{LoginPage,RegisterPage,AccountSettingsPage}.jsx`, `src/components/{ProtectedRoute,FirstLoginModal,DetailModal,TableView,ErrorBoundary}.jsx`.
+- **Auth session** is bootstrapped and listened to in `App.jsx` via `supabase.auth.onAuthStateChange`.
+
 ## Environment Variables
 
 **.env** (local, never committed):

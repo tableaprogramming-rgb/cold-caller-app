@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import './ContactCard.css';
 
-export default function ContactCard({ contact, onUpdate }) {
+export default function ContactCard({ contact, onUpdate, access, onOpen }) {
   const [isEditingComments, setIsEditingComments] = useState(false);
   const [comments, setComments] = useState(contact.comments || '');
   const [isSaving, setIsSaving] = useState(false);
+
+  const canEdit = access ? access.canEdit : true;
 
   async function handleSaveComments() {
     if (comments === contact.comments) {
@@ -55,10 +57,29 @@ export default function ContactCard({ contact, onUpdate }) {
     ? `${contact.prefix} ${contact.contact_person || 'N/A'}`
     : contact.contact_person || 'N/A';
 
+  const badgeClass =
+    access?.role === 'owner'
+      ? 'owner'
+      : access?.role === 'editor'
+      ? 'editor'
+      : 'viewer';
+
   return (
     <div className="contact-card">
       <div className="card-header">
-        <h3 className="company-name">{contact.company}</h3>
+        <h3
+          className="company-name"
+          onClick={onOpen ? () => onOpen(contact) : undefined}
+          style={onOpen ? { cursor: 'pointer' } : undefined}
+          title={onOpen ? 'View details' : undefined}
+        >
+          {contact.company}
+        </h3>
+        {access && (
+          <span className={`access-badge ${badgeClass}`} title={access.label}>
+            {access.label}
+          </span>
+        )}
       </div>
 
       <div className="card-body">
@@ -99,7 +120,15 @@ export default function ContactCard({ contact, onUpdate }) {
       </div>
 
       <div className="card-comments">
-        {isEditingComments ? (
+        {!canEdit ? (
+          <div className="comments-view comments-readonly">
+            {contact.comments ? (
+              <p className="comments-text">{contact.comments}</p>
+            ) : (
+              <p className="comments-placeholder">No comments</p>
+            )}
+          </div>
+        ) : isEditingComments ? (
           <div className="comments-edit">
             <textarea
               value={comments}

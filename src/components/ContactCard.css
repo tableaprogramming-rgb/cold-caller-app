@@ -171,3 +171,34 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Access control badges */
+.access-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  line-height: 1.4;
+}
+
+.access-badge.owner {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.access-badge.editor {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.access-badge.viewer {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.comments-readonly {
+  cursor: default;
+  opacity: 0.9;
+}

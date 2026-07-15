@@ -5,7 +5,7 @@ import './KanbanBoard.css';
 
 const STAGES = ['New', 'To Call', 'Called', 'No Answer', 'For Demo', 'Done'];
 
-export default function KanbanBoard({ contacts, onCardUpdate }) {
+export default function KanbanBoard({ contacts, onCardUpdate, getAccess, onOpen }) {
   function handleDragEnd(result) {
     const { source, destination, draggableId } = result;
 
@@ -19,8 +19,15 @@ export default function KanbanBoard({ contacts, onCardUpdate }) {
 
     const newStatus = destination.droppableId;
     const contact = contacts.find((c) => c.id === draggableId);
+    if (!contact) return;
 
-    if (contact && contact.status !== newStatus) {
+    // Guard: never persist a status change the user isn't allowed to make.
+    const access = getAccess ? getAccess(contact) : null;
+    if (access && !access.canEdit) {
+      return;
+    }
+
+    if (contact.status !== newStatus) {
       updateContactStatus(contact.id, newStatus);
     }
   }
@@ -39,7 +46,7 @@ export default function KanbanBoard({ contacts, onCardUpdate }) {
       onCardUpdate(data);
     } catch (error) {
       console.error('Error updating contact status:', error);
-      alert('Failed to update contact status. Please try again.');
+      alert('Failed to update contact status. You may not have permission to edit this contact.');
     }
   }
 
@@ -47,7 +54,9 @@ export default function KanbanBoard({ contacts, onCardUpdate }) {
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="kanban-board">
         {STAGES.map((stage) => {
-          const stageContacts = contacts.filter((c) => c.status?.toLowerCase() === stage.toLowerCase());
+          const stageContacts = contacts.filter(
+            (c) => c.status?.toLowerCase() === stage.toLowerCase()
+          );
           return (
             <Droppable key={stage} droppableId={stage}>
               {(provided, snapshot) => (
@@ -60,6 +69,8 @@ export default function KanbanBoard({ contacts, onCardUpdate }) {
                     stage={stage}
                     contacts={stageContacts}
                     onCardUpdate={onCardUpdate}
+                    getAccess={getAccess}
+                    onOpen={onOpen}
                   />
                   {provided.placeholder}
                 </div>

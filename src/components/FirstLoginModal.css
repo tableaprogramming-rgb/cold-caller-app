@@ -1,0 +1,85 @@
+.flm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.flm-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.flm-modal h2 {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+  color: #2d2d2d;
+}
+
+.flm-subtitle {
+  margin: 0 0 22px 0;
+  color: #888;
+  font-size: 14px;
+}
+
+.flm-field {
+  margin-bottom: 16px;
+}
+
+.flm-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.flm-field input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.flm-field input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.flm-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.flm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.flm-error {
+  background: #fdecea;
+  color: #b71c1c;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 18px;
+}

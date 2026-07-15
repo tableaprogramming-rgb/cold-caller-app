@@ -1,0 +1,190 @@
+.asp-wrapper {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.asp-topbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.asp-topbar h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.asp-back {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.asp-back:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.asp-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.asp-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+}
+
+.asp-card h2 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  color: #2d2d2d;
+}
+
+.asp-hint {
+  color: #888;
+  font-size: 13px;
+  margin: 0 0 16px 0;
+}
+
+.asp-error {
+  background: #fdecea;
+  color: #b71c1c;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.asp-invite-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.asp-invite-form input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.asp-invite-form select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.asp-invite-form button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.asp-invite-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.asp-invite-result {
+  margin-top: 18px;
+  padding: 16px;
+  background: #f8f9ff;
+  border: 1px solid #e0e4ff;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.asp-invite-result p {
+  margin: 0 0 10px 0;
+}
+
+.asp-temp-pw {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.asp-temp-pw code {
+  flex: 1;
+  background: #fff;
+  border: 1px dashed #999;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 15px;
+  letter-spacing: 1px;
+  font-family: monospace;
+}
+
+.asp-temp-pw button {
+  padding: 10px 16px;
+  background: #667eea;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.asp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.asp-table th {
+  text-align: left;
+  padding: 10px;
+  color: #666;
+  border-bottom: 2px solid #eee;
+  font-weight: 600;
+}
+
+.asp-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+}
+
+.asp-table select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.asp-revoke {
+  padding: 6px 14px;
+  background: #fff;
+  color: #d32f2f;
+  border: 1px solid #f0c0c0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.asp-revoke:hover {
+  background: #fdecea;
+}

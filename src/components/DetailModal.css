@@ -1,0 +1,177 @@
+.dm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: 20px;
+}
+
+.dm-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  padding: 24px;
+}
+
+.dm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dm-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #2d2d2d;
+  word-break: break-word;
+}
+
+.dm-close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dm-close:hover {
+  color: #333;
+}
+
+.dm-badge {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.dm-badge.owner {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.dm-badge.editor {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.dm-badge.viewer {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.dm-body {
+  margin-top: 18px;
+}
+
+.dm-row {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.dm-label {
+  flex: 0 0 90px;
+  color: #888;
+  font-weight: 600;
+}
+
+.dm-value {
+  color: #333;
+  word-break: break-word;
+}
+
+.dm-value a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.dm-field {
+  margin-top: 16px;
+}
+
+.dm-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.dm-field select,
+.dm-field textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.dm-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.dm-static {
+  color: #555;
+  margin: 0;
+}
+
+.dm-error {
+  margin-top: 14px;
+  background: #fdecea;
+  color: #b71c1c;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.dm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.dm-cancel,
+.dm-save {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.dm-cancel {
+  background: #eee;
+  color: #444;
+}
+
+.dm-save {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.dm-save:disabled,
+.dm-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

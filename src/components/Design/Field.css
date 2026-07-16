@@ -1,0 +1,28 @@
+.kan-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kan-space-3);
+  margin-bottom: var(--kan-space-8);
+}
+
+.kan-field__label {
+  font-size: var(--kan-fs-sm);
+  font-weight: var(--kan-fw-semibold);
+  color: #444444;
+}
+
+.kan-field__required {
+  color: var(--kan-error-fg);
+}
+
+.kan-field__hint {
+  margin: 0;
+  font-size: var(--kan-fs-sm);
+  color: var(--kan-text-subtle);
+}
+
+.kan-field__error {
+  margin: 0;
+  font-size: var(--kan-fs-sm);
+  color: var(--kan-error-fg);
+}

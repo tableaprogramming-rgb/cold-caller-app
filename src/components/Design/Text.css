@@ -1,0 +1,54 @@
+.kan-text {
+  font-family: var(--kan-font-sans);
+  line-height: var(--kan-lh-normal);
+  color: var(--kan-text);
+  margin: 0;
+}
+
+/* Sizes */
+.kan-text--xs   { font-size: var(--kan-fs-xs); }
+.kan-text--sm   { font-size: var(--kan-fs-sm); }
+.kan-text--base { font-size: var(--kan-fs-base); }
+.kan-text--md   { font-size: var(--kan-fs-md); }
+.kan-text--lg   { font-size: var(--kan-fs-lg); }
+.kan-text--xl   { font-size: var(--kan-fs-xl); }
+.kan-text--2xl  { font-size: var(--kan-fs-2xl); }
+
+/* Weights */
+.kan-text--w-regular  { font-weight: var(--kan-fw-regular); }
+.kan-text--w-medium   { font-weight: var(--kan-fw-medium); }
+.kan-text--w-semibold { font-weight: var(--kan-fw-semibold); }
+.kan-text--w-bold     { font-weight: var(--kan-fw-bold); }
+
+/* Tones */
+.kan-text--tone-default     { color: var(--kan-text); }
+.kan-text--tone-muted       { color: var(--kan-text-muted); }
+.kan-text--tone-subtle      { color: var(--kan-text-subtle); }
+.kan-text--tone-placeholder { color: var(--kan-text-placeholder); }
+.kan-text--tone-strong      { color: var(--kan-text-strong); }
+.kan-text--tone-primary     { color: var(--kan-primary); }
+.kan-text--tone-error       { color: var(--kan-error-fg); }
+.kan-text--tone-success     { color: var(--kan-success-fg); }
+
+.kan-text--truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ----- Link ----- */
+.kan-link {
+  color: var(--kan-primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--kan-transition);
+  word-break: break-word;
+}
+.kan-link:hover {
+  color: var(--kan-primary-hover);
+  text-decoration: underline;
+}
+.kan-link--phone,
+.kan-link--email {
+  word-break: break-all;
+}

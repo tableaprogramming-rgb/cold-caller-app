@@ -1,0 +1,98 @@
+.kan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kan-space-3);
+  font-family: var(--kan-font-sans);
+  font-weight: var(--kan-fw-semibold);
+  border: 1px solid transparent;
+  border-radius: var(--kan-radius-lg);
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
+  transition: background var(--kan-transition), border-color var(--kan-transition),
+    color var(--kan-transition), opacity var(--kan-transition), box-shadow var(--kan-transition);
+}
+
+.kan-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--kan-focus-ring);
+}
+
+/* ----- Sizes ----- */
+.kan-btn--sm { padding: 6px 12px; font-size: var(--kan-fs-sm); border-radius: var(--kan-radius-md); }
+.kan-btn--md { padding: 10px 18px; font-size: var(--kan-fs-base); }
+.kan-btn--lg { padding: 12px 22px; font-size: var(--kan-fs-md); }
+
+.kan-btn--block { width: 100%; }
+
+/* ----- Primary ----- */
+.kan-btn--primary {
+  background: var(--kan-primary-gradient);
+  color: var(--kan-white);
+}
+.kan-btn--primary:hover:not(:disabled) { filter: brightness(1.05); }
+.kan-btn--primary:active:not(:disabled) { filter: brightness(0.95); }
+
+/* ----- Secondary ----- */
+.kan-btn--secondary {
+  background: var(--kan-surface-alt);
+  color: var(--kan-text);
+  border-color: var(--kan-border-input);
+}
+.kan-btn--secondary:hover:not(:disabled) { background: var(--kan-border); }
+.kan-btn--secondary:active:not(:disabled) { background: #d4d4d4; }
+
+/* ----- Ghost / text ----- */
+.kan-btn--ghost {
+  background: transparent;
+  color: var(--kan-primary);
+}
+.kan-btn--ghost:hover:not(:disabled) { background: var(--kan-accent-bg); }
+.kan-btn--ghost:active:not(:disabled) { background: #ede0f5; }
+
+/* ----- Danger ----- */
+.kan-btn--danger {
+  background: var(--kan-error-fg);
+  color: var(--kan-white);
+}
+.kan-btn--danger:hover:not(:disabled) { filter: brightness(1.1); }
+.kan-btn--danger:active:not(:disabled) { filter: brightness(0.9); }
+
+/* ----- Icon-only ----- */
+.kan-btn--icon {
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--kan-radius-md);
+}
+.kan-btn--sm.kan-btn--icon { width: 30px; height: 30px; }
+.kan-btn--lg.kan-btn--icon { width: 42px; height: 42px; }
+
+/* ----- Disabled ----- */
+.kan-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ----- Loading ----- */
+.kan-btn--loading { cursor: progress; }
+
+.kan-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kan-btn__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: kan-btn-spin 0.6s linear infinite;
+}
+
+@keyframes kan-btn-spin {
+  to { transform: rotate(360deg); }
+}

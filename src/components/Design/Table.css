@@ -1,0 +1,46 @@
+.kan-table__wrapper {
+  overflow: auto;
+  background: var(--kan-white);
+  border-radius: var(--kan-radius-lg);
+  box-shadow: var(--kan-shadow-card);
+}
+
+.kan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--kan-fs-base);
+}
+
+.kan-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--kan-bg);
+  text-align: left;
+  padding: 12px 14px;
+  font-weight: var(--kan-fw-semibold);
+  color: #555555;
+  border-bottom: 2px solid var(--kan-border);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.kan-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eeeeee;
+  color: var(--kan-text);
+  vertical-align: middle;
+}
+
+.kan-table tbody tr:hover {
+  background: var(--kan-bg-hover);
+}
+
+.kan-table__row--clickable {
+  cursor: pointer;
+}
+
+.kan-table__empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--kan-text-placeholder);
+}

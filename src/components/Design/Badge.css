@@ -1,0 +1,42 @@
+.kan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kan-space-2);
+  font-size: 10px;
+  font-weight: var(--kan-fw-semibold);
+  padding: 2px 8px;
+  border-radius: var(--kan-radius-pill);
+  line-height: var(--kan-lh-normal);
+  white-space: nowrap;
+}
+
+/* Role variants (mapped from app access badges) */
+.kan-badge--owner,
+.kan-badge--info    { background: var(--kan-info-bg);    color: var(--kan-info-fg); }
+.kan-badge--editor,
+.kan-badge--success { background: var(--kan-success-bg); color: var(--kan-success-fg); }
+.kan-badge--viewer,
+.kan-badge--accent  { background: var(--kan-accent-bg);  color: var(--kan-accent-fg); }
+.kan-badge--error   { background: var(--kan-error-bg);   color: var(--kan-error-fg); }
+.kan-badge--warning { background: #fff8e1;               color: #b8860b; }
+.kan-badge--neutral { background: var(--kan-surface-alt);color: var(--kan-text-muted); }
+
+/* ----- Standalone status dot ----- */
+.kan-badge__dot,
+.kan-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.kan-dot--owner,   .kan-badge--owner   .kan-badge__dot,
+.kan-dot--info,    .kan-badge--info    .kan-badge__dot    { background: var(--kan-info-fg); }
+.kan-dot--editor,  .kan-badge--editor  .kan-badge__dot,
+.kan-dot--success, .kan-badge--success .kan-badge__dot    { background: var(--kan-success-fg); }
+.kan-dot--viewer,  .kan-badge--viewer  .kan-badge__dot,
+.kan-dot--accent,  .kan-badge--accent  .kan-badge__dot    { background: var(--kan-accent-fg); }
+.kan-dot--error,   .kan-badge--error   .kan-badge__dot    { background: var(--kan-error-fg); }
+.kan-dot--warning, .kan-badge--warning .kan-badge__dot    { background: #b8860b; }
+.kan-dot--neutral, .kan-badge--neutral .kan-badge__dot    { background: var(--kan-text-placeholder); }

@@ -1,0 +1,81 @@
+.kan-tabs {
+  display: inline-flex;
+}
+
+/* ----- Segment (pill toggle) variant ----- */
+.kan-tabs--segment {
+  background: var(--kan-surface-alt);
+  border-radius: var(--kan-radius-lg);
+  padding: 3px;
+  gap: 0;
+}
+
+.kan-tabs--segment .kan-tabs__tab {
+  border: none;
+  background: transparent;
+  padding: 7px 18px;
+  border-radius: var(--kan-radius-md);
+  cursor: pointer;
+  font-family: var(--kan-font-sans);
+  font-size: var(--kan-fs-base);
+  font-weight: var(--kan-fw-semibold);
+  color: var(--kan-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kan-space-4);
+  transition: background var(--kan-transition), color var(--kan-transition);
+}
+
+.kan-tabs--segment .kan-tabs__tab:hover:not(.is-active) {
+  color: var(--kan-text);
+}
+
+.kan-tabs--segment .kan-tabs__tab.is-active {
+  background: var(--kan-white);
+  color: var(--kan-primary);
+  box-shadow: var(--kan-shadow-md);
+}
+
+/* ----- Underline variant ----- */
+.kan-tabs--underline {
+  gap: var(--kan-space-6);
+  border-bottom: 2px solid var(--kan-border-subtle);
+}
+
+.kan-tabs--underline .kan-tabs__tab {
+  border: none;
+  background: transparent;
+  padding: 10px 4px;
+  cursor: pointer;
+  font-family: var(--kan-font-sans);
+  font-size: var(--kan-fs-base);
+  font-weight: var(--kan-fw-semibold);
+  color: var(--kan-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kan-space-4);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color var(--kan-transition), border-color var(--kan-transition);
+}
+
+.kan-tabs--underline .kan-tabs__tab:hover:not(.is-active) {
+  color: var(--kan-text);
+}
+
+.kan-tabs--underline .kan-tabs__tab.is-active {
+  color: var(--kan-primary);
+  border-bottom-color: var(--kan-primary);
+}
+
+/* ----- Count pill ----- */
+.kan-tabs__count {
+  background: var(--kan-primary);
+  color: var(--kan-white);
+  padding: 1px 7px;
+  border-radius: var(--kan-radius-pill);
+  font-size: var(--kan-fs-xs);
+  font-weight: var(--kan-fw-semibold);
+  min-width: 20px;
+  text-align: center;
+}

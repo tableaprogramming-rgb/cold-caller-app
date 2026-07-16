@@ -1,0 +1,61 @@
+.kan-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--kan-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--kan-z-modal);
+  padding: var(--kan-space-10);
+}
+
+.kan-modal {
+  background: var(--kan-white);
+  border-radius: var(--kan-radius-xl);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--kan-shadow-modal);
+  padding: var(--kan-space-12);
+}
+
+.kan-modal--sm { max-width: 400px; }
+.kan-modal--md { max-width: 480px; }
+.kan-modal--lg { max-width: 640px; }
+
+.kan-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--kan-space-6);
+}
+
+.kan-modal__title {
+  margin: 0;
+  font-size: var(--kan-fs-xl);
+  color: var(--kan-text-strong);
+  word-break: break-word;
+}
+
+.kan-modal__close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--kan-text-placeholder);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--kan-transition);
+}
+.kan-modal__close:hover { color: var(--kan-text); }
+
+.kan-modal__body {
+  margin-top: var(--kan-space-9);
+}
+
+.kan-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--kan-space-5);
+  margin-top: var(--kan-space-12);
+}

@@ -1,0 +1,28 @@
+.kan-divider {
+  border: none;
+  margin: 0;
+  background: var(--kan-border-subtle);
+}
+
+.kan-divider--horizontal {
+  width: 100%;
+  height: 1px;
+}
+
+.kan-divider--vertical {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1em;
+}
+
+.kan-spinner {
+  display: inline-block;
+  border: 2px solid var(--kan-border);
+  border-top-color: var(--kan-primary);
+  border-radius: 50%;
+  animation: kan-spin 0.7s linear infinite;
+}
+
+@keyframes kan-spin {
+  to { transform: rotate(360deg); }
+}

@@ -6,6 +6,7 @@ import KanbanBoard from './components/KanbanBoard';
 import TableView from './components/TableView';
 import SearchBar from './components/SearchBar';
 import DetailModal from './components/DetailModal';
+import NewContactModal from './components/NewContactModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import FirstLoginModal from './components/FirstLoginModal';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -27,6 +28,7 @@ function App() {
   const [appView, setAppView] = useState('board'); // 'board' | 'table'
   const [route, setRoute] = useState('app'); // 'app' | 'settings'
   const [selectedContact, setSelectedContact] = useState(null);
+  const [showNewContactModal, setShowNewContactModal] = useState(false);
 
   // --- data state ---
   const [contacts, setContacts] = useState([]);
@@ -192,6 +194,10 @@ function App() {
     // onAuthStateChange handles the rest.
   }
 
+  function handleContactAdded(newContact) {
+    setContacts((prev) => [...prev, newContact]);
+  }
+
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
@@ -263,6 +269,9 @@ function App() {
                   Table
                 </button>
               </div>
+              <button className="add-contact-btn" onClick={() => setShowNewContactModal(true)}>
+                + Add Contact
+              </button>
             </div>
 
             <div className="app-content">
@@ -292,6 +301,14 @@ function App() {
                 access={getAccess(selectedContact)}
                 onClose={() => setSelectedContact(null)}
                 onUpdate={handleCardUpdate}
+              />
+            )}
+
+            {showNewContactModal && (
+              <NewContactModal
+                user={user}
+                onClose={() => setShowNewContactModal(false)}
+                onContactAdded={handleContactAdded}
               />
             )}
           </div>

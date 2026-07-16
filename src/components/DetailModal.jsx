@@ -80,7 +80,9 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
         {access && <span className={`dm-badge ${access.role}`}>{access.label}</span>}
 
         <div className="dm-body">
+          <DetailRow label="Company" value={contact.company || '—'} />
           <DetailRow label="Contact" value={contactName} />
+          <DetailRow label="Prefix" value={contact.prefix || '—'} />
           <DetailRow
             label="Phone"
             value={
@@ -91,14 +93,18 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
               )
             }
           />
-          {contact.email && (
-            <DetailRow
-              label="Email"
-              value={<a href={`mailto:${contact.email}`}>{contact.email}</a>}
-            />
-          )}
-          {contact.area_code && <DetailRow label="Area Code" value={contact.area_code} />}
-          {contact.address && <DetailRow label="Address" value={contact.address} />}
+          <DetailRow
+            label="Email"
+            value={
+              contact.email ? (
+                <a href={`mailto:${contact.email}`}>{contact.email}</a>
+              ) : (
+                '—'
+              )
+            }
+          />
+          <DetailRow label="Area Code" value={contact.area_code || '—'} />
+          <DetailRow label="Address" value={contact.address || '—'} />
 
           <div className="dm-field">
             <label>Status</label>

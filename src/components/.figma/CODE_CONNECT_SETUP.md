@@ -1,28 +1,31 @@
 # Code Connect Setup - Cold Caller App
 
-This directory will contain Code Connect template files (`.figma.ts`) that map Figma components to React source code.
+This directory contains Code Connect template files (`.figma.ts`) that map Figma components to React source code.
+
+**Figma File:** https://figma.com/design/PhfWVOOFvwPbtpHBUNa47V/cold-calling-tracking
 
 ## How Code Connect Works
 
 Code Connect creates a **bi-directional link** between:
-- **Figma designs** (visual components in Figma file)
+- **Figma designs** (visual components in your Figma file)
 - **React source code** (actual components in src/components/)
 
 **Workflow:**
 1. You make changes in Figma (colors, layout, props)
-2. I read the updated Figma design
-3. I update the React component code to match
-4. Code is committed and pushed automatically
+2. Tell Claude Code: "I updated the button in Figma"
+3. Claude Code reads the updated Figma design
+4. Claude Code updates the React component code to match
+5. Changes are automatically committed and pushed
 
 ## Files in This Directory
 
 Each `.figma.ts` file maps ONE Figma component to ONE React component:
 
-- `Button.figma.ts` → `Button.jsx`
-- `ContactCard.figma.ts` → `ContactCard.jsx`
-- `DetailModal.figma.ts` → `DetailModal.jsx`
-- `Input.figma.ts` → `Input.jsx`
-- etc.
+- `Button.figma.ts` → Button component
+- `ContactCard.figma.ts` → ContactCard component
+- `DetailModal.figma.ts` → DetailModal component
+- `KanbanBoard.figma.ts` → KanbanBoard component
+- `SearchBar.figma.ts` → SearchBar component
 
 ## Template Structure
 

@@ -6,13 +6,14 @@ Your Cold Caller App now has a **bi-directional design-to-code bridge**. You can
 
 ## Your Figma File
 
-🎨 **Open:** https://figma.com/design/HPsT4ATBgZdbtNuoZyy23i/
+🎨 **Open:** https://figma.com/design/PhfWVOOFvwPbtpHBUNa47V/cold-calling-tracking
 
 Contains:
-- **Components Page** — UI component library (buttons, inputs, badges, cards, modals)
-- **Kanban Board** — Main app layout
+- **Components Page** — UI component library (buttons, cards, modals)
+- **Kanban Board** — Main app layout with 6 stages
 - **Detail Modal** — Contact detail view
-- **New Contact Modal** — Add contact form
+- **Table View** — Alternative list view
+- **LoginPage** — Authentication page
 
 ## How It Works
 

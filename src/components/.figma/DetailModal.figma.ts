@@ -1,4 +1,4 @@
-// url=https://figma.com/design/HPsT4ATBgZdbtNuoZyy23i/Cold%20Caller%20App%20Design%20System?node-id=DETAIL_MODAL_NODE_ID
+// url=https://www.figma.com/design/PhfWVOOFvwPbtpHBUNa47V/cold-calling-tracking
 // source=src/components/DetailModal.jsx
 // component=DetailModal
 
@@ -6,23 +6,23 @@ import figma from 'figma'
 const instance = figma.selectedInstance
 
 // Extract modal properties
-const title = instance.getString('Title')
-const hasCloseButton = instance.getBoolean('Has Close Button', { true: true, false: false })
+const title = instance.getString('Title') || 'Contact Details'
+const showCloseButton = instance.getBoolean('Show Close Button') || true
 
 export default {
   example: figma.code`
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
+    <div className="dm-overlay" onClick={onClose}>
+      <div className="dm-modal" onClick={(e) => e.stopPropagation()} role="dialog">
+        <div className="dm-header">
           <h2>${title}</h2>
-          ${hasCloseButton ? '<button className="modal-close">×</button>' : ''}
+          ${showCloseButton ? '<button className="dm-close" onClick={onClose}>×</button>' : ''}
         </div>
-        <div className="modal-body">
-          {/* Content goes here */}
+        <div className="dm-body">
+          {/* Contact details fields rendered here */}
         </div>
-        <div className="modal-actions">
-          <button className="btn btn-secondary">Cancel</button>
-          <button className="btn btn-primary">Save</button>
+        <div className="dm-actions">
+          <button className="dm-cancel" onClick={onClose}>Cancel</button>
+          <button className="dm-save" onClick={handleSave}>Save</button>
         </div>
       </div>
     </div>

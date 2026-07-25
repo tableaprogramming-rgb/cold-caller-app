@@ -15,6 +15,7 @@ import AccountSettingsPage from './pages/AccountSettingsPage';
 import './App.css';
 
 function App() {
+  // Organization-based cold calling tracker with team collaboration
   // --- auth state ---
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);

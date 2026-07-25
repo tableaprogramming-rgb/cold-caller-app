@@ -5,12 +5,28 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
+-- 0. organizations  (org-based ownership — all contacts belong to an org)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS organizations (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text NOT NULL UNIQUE,
+  created_at timestamptz DEFAULT now()
+);
+
+-- ----------------------------------------------------------------------------
 -- 1. contacts.user_id  (ownership — nullable so existing 1,900 rows survive)
+--    Retained as an informal "created_by" audit trail. NOT used by RLS going
+--    forward — org-based RLS uses contacts.organization_id (below).
 -- ----------------------------------------------------------------------------
 ALTER TABLE contacts
   ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
 
 CREATE INDEX IF NOT EXISTS contacts_user_id_idx ON contacts(user_id);
+
+-- contacts.organization_id — the real ownership key under the org model.
+ALTER TABLE contacts
+  ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id) ON DELETE RESTRICT;
+CREATE INDEX IF NOT EXISTS contacts_organization_id_idx ON contacts(organization_id);
 
 -- ----------------------------------------------------------------------------
 -- 2. user_profiles  (mirror of auth.users + first-login tracking)
@@ -28,6 +44,19 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- Add username to existing installs (safe to re-run).
 ALTER TABLE user_profiles
   ADD COLUMN IF NOT EXISTS username text UNIQUE;
+
+-- Org membership + uniform role. Users belong to exactly one org (flat columns,
+-- no junction table). Role drives access uniformly across all org contacts.
+ALTER TABLE user_profiles
+  ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id) ON DELETE RESTRICT,
+  ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'viewer'
+    CHECK (role IN ('admin', 'editor', 'viewer'));
+
+-- Username uniqueness moves from global to per-org (NULLs don't collide in a
+-- unique index, so orphaned NULL-org profiles are fine).
+ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS user_profiles_username_key;
+CREATE UNIQUE INDEX IF NOT EXISTS user_profiles_org_username_idx
+  ON user_profiles (organization_id, username);
 
 -- Helper: build the internal login email from a username. The `@coldcaller.local`
 -- domain is never shown to or typed by users; it just satisfies Supabase's email
@@ -56,10 +85,16 @@ $$;
 -- questions the login/registration flow needs — without leaking the table.
 -- ----------------------------------------------------------------------------
 
--- Resolve a username to its internal login email (for sign-in). Returns NULL
--- when the username doesn't exist. SECURITY DEFINER so it runs regardless of
--- RLS; it deliberately returns ONLY the internal email, nothing else.
-CREATE OR REPLACE FUNCTION public.email_for_username(u text)
+-- Username lookups are now org-scoped: the login flow supplies the org name so
+-- the same username can exist in different orgs. Drop the old 1-arg overloads
+-- (hard cutover — old clients will fail to log in, which is intended).
+DROP FUNCTION IF EXISTS public.email_for_username(text);
+DROP FUNCTION IF EXISTS public.username_exists(text);
+
+-- Resolve (org name, username) to the internal login email (for sign-in).
+-- Returns NULL when no match. SECURITY DEFINER so it runs regardless of RLS;
+-- it deliberately returns ONLY the internal email, nothing else.
+CREATE OR REPLACE FUNCTION public.email_for_username(org_name text, u text)
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -68,17 +103,18 @@ AS $$
 DECLARE
   result text;
 BEGIN
-  SELECT email INTO result
-  FROM public.user_profiles
-  WHERE username = lower(trim(u))
+  SELECT up.email INTO result
+  FROM public.user_profiles up
+  JOIN public.organizations o ON o.id = up.organization_id
+  WHERE lower(o.name) = lower(trim(org_name)) AND up.username = lower(trim(u))
   LIMIT 1;
   RETURN result;
 END;
 $$;
 
--- Check whether a username is already taken (for registration/invite). Returns
--- a boolean and leaks nothing else about the account.
-CREATE OR REPLACE FUNCTION public.username_exists(u text)
+-- Check whether a username is already taken within an org (for add-member).
+-- Returns a boolean and leaks nothing else about the account.
+CREATE OR REPLACE FUNCTION public.username_exists(org_name text, u text)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -86,14 +122,54 @@ SET search_path = public
 AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.user_profiles WHERE username = lower(trim(u))
+    SELECT 1 FROM public.user_profiles up
+    JOIN public.organizations o ON o.id = up.organization_id
+    WHERE lower(o.name) = lower(trim(org_name)) AND up.username = lower(trim(u))
   );
 END;
 $$;
 
 -- Allow anonymous + authenticated callers to invoke the two helpers above.
-GRANT EXECUTE ON FUNCTION public.email_for_username(text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.username_exists(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.email_for_username(text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.username_exists(text, text) TO anon, authenticated;
+
+-- ----------------------------------------------------------------------------
+-- Current-user org/role helpers (SECURITY DEFINER to avoid RLS self-recursion
+-- when user_profiles policies need to read the caller's own org/role).
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.current_user_org_id()
+RETURNS uuid LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT organization_id FROM public.user_profiles WHERE id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.current_user_role()
+RETURNS text LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT role FROM public.user_profiles WHERE id = auth.uid();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.current_user_org_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_user_role() TO authenticated;
+
+-- ----------------------------------------------------------------------------
+-- Role-escalation guard: RLS UPDATE policies OR together, so the self-update
+-- policy would otherwise let a non-admin change their own role/organization_id.
+-- This trigger blocks that at the row level.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.prevent_self_role_escalation()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF (NEW.role IS DISTINCT FROM OLD.role OR NEW.organization_id IS DISTINCT FROM OLD.organization_id)
+     AND public.current_user_role() <> 'admin' THEN
+    RAISE EXCEPTION 'Only admins can change role or organization.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS enforce_role_change_authz ON user_profiles;
+CREATE TRIGGER enforce_role_change_authz
+  BEFORE UPDATE ON user_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_self_role_escalation();
 
 -- ----------------------------------------------------------------------------
 -- 3. contact_access  (sharing: owner shares all their contacts with a user)
@@ -154,17 +230,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.user_profiles (id, email, username, password_change_required, password_changed_at)
+  INSERT INTO public.user_profiles (id, email, username, organization_id, role, password_change_required, password_changed_at)
   VALUES (
     NEW.id,
     NEW.email,
     -- Username supplied via signup metadata; fall back to the local-part of the
-    -- internal email (everything before @coldcaller.local) if absent.
+    -- internal email if absent.
     COALESCE(
       NULLIF(NEW.raw_user_meta_data ->> 'username', ''),
       split_part(NEW.email, '@', 1)
     ),
-    -- If the user was created from a pending invite, force a password change.
+    -- Org + role supplied via signup metadata (admin-created accounts are born
+    -- correct, no follow-up UPDATE needed).
+    NULLIF(NEW.raw_user_meta_data ->> 'organization_id', '')::uuid,
+    COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'role', ''), 'viewer'),
+    -- If the user was created by an admin, force a password change.
     COALESCE((NEW.raw_user_meta_data ->> 'password_change_required')::boolean, false),
     NULL
   )
@@ -183,67 +263,61 @@ CREATE TRIGGER on_auth_user_created
 -- ============================================================================
 
 -- ---- contacts --------------------------------------------------------------
+-- Org-scoped RLS. All visibility/edit rights derive from the caller's org + role
+-- (see current_user_org_id() / current_user_role()). The legacy per-owner and
+-- share-based policies are dropped.
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view own contacts" ON contacts;
-CREATE POLICY "Users can view own contacts" ON contacts
-  FOR SELECT USING (user_id = auth.uid());
-
 DROP POLICY IF EXISTS "Users can view shared contacts" ON contacts;
-CREATE POLICY "Users can view shared contacts" ON contacts
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM contact_access
-      WHERE contact_access.owner_id = contacts.user_id
-        AND contact_access.shared_with_id = auth.uid()
-    )
-  );
-
 DROP POLICY IF EXISTS "Users can update own contacts" ON contacts;
-CREATE POLICY "Users can update own contacts" ON contacts
-  FOR UPDATE USING (user_id = auth.uid());
-
 DROP POLICY IF EXISTS "Editors can update shared contacts" ON contacts;
-CREATE POLICY "Editors can update shared contacts" ON contacts
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM contact_access
-      WHERE contact_access.owner_id = contacts.user_id
-        AND contact_access.shared_with_id = auth.uid()
-        AND contact_access.role = 'editor'
-    )
+DROP POLICY IF EXISTS "Users can insert own contacts" ON contacts;
+DROP POLICY IF EXISTS "Users can delete own contacts" ON contacts;
+
+CREATE POLICY "org_members_select_contacts" ON contacts
+  FOR SELECT USING (organization_id = current_user_org_id());
+
+CREATE POLICY "org_editors_insert_contacts" ON contacts
+  FOR INSERT WITH CHECK (
+    organization_id = current_user_org_id() AND current_user_role() IN ('admin', 'editor')
   );
 
-DROP POLICY IF EXISTS "Users can insert own contacts" ON contacts;
-CREATE POLICY "Users can insert own contacts" ON contacts
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "org_editors_update_contacts" ON contacts
+  FOR UPDATE USING (
+    organization_id = current_user_org_id() AND current_user_role() IN ('admin', 'editor')
+  );
 
-DROP POLICY IF EXISTS "Users can delete own contacts" ON contacts;
-CREATE POLICY "Users can delete own contacts" ON contacts
-  FOR DELETE USING (user_id = auth.uid());
+CREATE POLICY "org_admins_delete_contacts" ON contacts
+  FOR DELETE USING (
+    organization_id = current_user_org_id() AND current_user_role() = 'admin'
+  );
 
 -- ---- user_profiles ---------------------------------------------------------
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
-CREATE POLICY "Users can view own profile" ON user_profiles
-  FOR SELECT USING (id = auth.uid());
-
--- Allow an owner to look up profiles of users they've shared with, and
--- users who share with them, so the UI can show emails/roles.
 DROP POLICY IF EXISTS "Users can view related profiles" ON user_profiles;
-CREATE POLICY "Users can view related profiles" ON user_profiles
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM contact_access
-      WHERE (contact_access.owner_id = auth.uid() AND contact_access.shared_with_id = user_profiles.id)
-         OR (contact_access.shared_with_id = auth.uid() AND contact_access.owner_id = user_profiles.id)
-    )
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+
+CREATE POLICY "org_members_select_profiles" ON user_profiles
+  FOR SELECT USING (organization_id = current_user_org_id());
+
+CREATE POLICY "self_update_profile" ON user_profiles
+  FOR UPDATE USING (id = auth.uid());
+
+CREATE POLICY "admin_update_org_profiles" ON user_profiles
+  FOR UPDATE USING (
+    organization_id = current_user_org_id() AND current_user_role() = 'admin'
   );
 
-DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
-CREATE POLICY "Users can update own profile" ON user_profiles
-  FOR UPDATE USING (id = auth.uid());
+-- ---- organizations ---------------------------------------------------------
+-- Members read their own org's name (for the header).
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "org_members_select_own_org" ON organizations;
+CREATE POLICY "org_members_select_own_org" ON organizations
+  FOR SELECT USING (id = current_user_org_id());
 
 -- ---- contact_access --------------------------------------------------------
 ALTER TABLE contact_access ENABLE ROW LEVEL SECURITY;
@@ -278,8 +352,27 @@ CREATE POLICY "Users can delete their invites" ON pending_invites
 ALTER TABLE auth_attempts DISABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- OPTIONAL: assign all existing (pre-auth) contacts to a specific owner so
--- they don't vanish under RLS. Replace the UUID with your admin user id
--- (find it in Dashboard → Authentication → Users after you register).
+-- Data migration (run AFTER the schema + RLS above, in this order).
+-- Creates the Raykan org, backfills all contacts into it, and assigns the
+-- existing test accounts. Idempotent — safe to re-run.
 -- ============================================================================
--- UPDATE contacts SET user_id = 'PASTE-ADMIN-USER-UUID-HERE' WHERE user_id IS NULL;
+INSERT INTO organizations (name) VALUES ('Raykan') ON CONFLICT (name) DO NOTHING;
+
+UPDATE contacts
+SET organization_id = (SELECT id FROM organizations WHERE name = 'Raykan')
+WHERE organization_id IS NULL;
+
+UPDATE user_profiles
+SET organization_id = (SELECT id FROM organizations WHERE name = 'Raykan'), role = 'admin'
+WHERE username = 'evmagto';
+
+UPDATE user_profiles
+SET organization_id = (SELECT id FROM organizations WHERE name = 'Raykan'), role = 'editor'
+WHERE username IN ('evm', 'alice', 'rbsesican');
+
+-- 3 NULL-username profiles are intentionally left with organization_id = NULL
+-- (orphaned, can't log in under the org-scoped scheme). No cleanup needed.
+
+-- ---- Verification (must both pass before deploying client code) ------------
+-- SELECT username, role, organization_id FROM user_profiles ORDER BY username;
+-- SELECT count(*) FROM contacts WHERE organization_id IS NULL;  -- must be 0

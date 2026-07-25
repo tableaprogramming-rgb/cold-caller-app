@@ -118,15 +118,19 @@ export function validateUsername(username) {
 }
 
 /**
- * Check whether a username is already taken. Uses the `username_exists` RPC
- * (SECURITY DEFINER) so it works even for anonymous callers, since RLS on
- * user_profiles blocks direct reads. Best-effort: if the RPC errors we return
- * { taken: false } and let the signUp call be the source of truth.
+ * Check whether a username is already taken within an org. Uses the
+ * `username_exists(org_name, u)` RPC (SECURITY DEFINER) so it works even for
+ * anonymous callers, since RLS on user_profiles blocks direct reads.
+ * Best-effort: if the RPC errors we return { taken: false } and let the signUp
+ * call be the source of truth.
  */
-export async function isUsernameTaken(username) {
+export async function isUsernameTaken(orgName, username) {
   const u = normalizeUsername(username);
   try {
-    const { data, error } = await supabase.rpc('username_exists', { u });
+    const { data, error } = await supabase.rpc('username_exists', {
+      org_name: (orgName || '').trim(),
+      u,
+    });
     if (error) return { taken: false, error: null };
     return { taken: !!data, error: null };
   } catch {
@@ -135,15 +139,18 @@ export async function isUsernameTaken(username) {
 }
 
 /**
- * Resolve a username to its internal login email via the `email_for_username`
- * RPC (SECURITY DEFINER). Returns null when the username is unknown. The
- * internal email is used only internally for Supabase sign-in — it is never
- * surfaced to the user.
+ * Resolve (org name, username) to the internal login email via the
+ * `email_for_username(org_name, u)` RPC (SECURITY DEFINER). Returns null when
+ * there is no match. The internal email is used only internally for Supabase
+ * sign-in — it is never surfaced to the user.
  */
-export async function emailForUsername(username) {
+export async function emailForUsername(orgName, username) {
   const u = normalizeUsername(username);
   try {
-    const { data, error } = await supabase.rpc('email_for_username', { u });
+    const { data, error } = await supabase.rpc('email_for_username', {
+      org_name: (orgName || '').trim(),
+      u,
+    });
     if (error) return null;
     return data || null;
   } catch {
@@ -152,75 +159,37 @@ export async function emailForUsername(username) {
 }
 
 // ---------------------------------------------------------------------------
-// Sign up (self-registration)
-// ---------------------------------------------------------------------------
-
-/**
- * Register a new user by username with rate limiting. A RANDOM internal email is
- * generated for the Supabase Auth identity (never shown to the user); the
- * username itself is stored on user_profiles via the signup metadata + trigger.
- * On success Supabase creates a session automatically (auto-login). Never
- * exposes the internal email in the returned data.
- */
-export async function signUp(username, password) {
-  const cleanUsername = normalizeUsername(username);
-
-  const validationError = validateUsername(cleanUsername);
-  if (validationError) return { data: null, error: validationError };
-
-  const internalEmail = generateInternalEmail();
-
-  const limit = await checkRateLimit(cleanUsername, 'register');
-  if (!limit.allowed) {
-    return { data: null, error: lockoutMessage(limit.lockedUntil) };
-  }
-
-  try {
-    const { taken } = await isUsernameTaken(cleanUsername);
-    if (taken) return { data: null, error: 'Username already taken.' };
-
-    await recordAttempt(cleanUsername, 'register', false);
-
-    const { data, error } = await supabase.auth.signUp({
-      email: internalEmail,
-      password,
-      options: {
-        data: { username: cleanUsername },
-      },
-    });
-
-    if (error) throw error;
-
-    await recordAttempt(cleanUsername, 'register', true);
-    // Only ever return the username — never the internal email.
-    return { data: { username: cleanUsername, session: data?.session || null }, error: null };
-  } catch (err) {
-    return { data: null, error: friendlyAuthError(err) };
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Sign in
 // ---------------------------------------------------------------------------
 
 /**
- * Sign in by username with rate limiting. The username is resolved to its
- * internal login email via an RPC (the email is never shown to the user).
- * Records an attempt regardless of outcome.
+ * Sign in by organization + username with rate limiting. The (org, username)
+ * pair is resolved to its internal login email via an RPC (the email is never
+ * shown to the user). Records an attempt regardless of outcome. This is a hard
+ * cutover: there is no legacy username-derived email fallback — every account
+ * now lives inside an org.
  */
-export async function signIn(username, password) {
+export async function signIn(orgName, username, password) {
+  const cleanOrg = (orgName || '').trim();
   const cleanUsername = normalizeUsername(username);
+  // Namespace the rate-limit identifier by org so lockouts don't collide across
+  // (future) orgs that happen to share a username.
+  const rateLimitId = `${cleanOrg}:${cleanUsername}`;
 
-  const limit = await checkRateLimit(cleanUsername, 'login');
+  const limit = await checkRateLimit(rateLimitId, 'login');
   if (!limit.allowed) {
     return { data: null, error: lockoutMessage(limit.lockedUntil), lockedUntil: limit.lockedUntil };
   }
 
-  // Look up the internal email for this username. Fall back to the legacy
-  // username-derived email for accounts created before random emails.
-  let internalEmail = await emailForUsername(cleanUsername);
+  // Resolve the internal email for this (org, username). No legacy fallback.
+  const internalEmail = await emailForUsername(cleanOrg, cleanUsername);
   if (!internalEmail) {
-    internalEmail = `${cleanUsername}@coldcaller.local`;
+    await recordAttempt(rateLimitId, 'login', false);
+    const post = await checkRateLimit(rateLimitId, 'login');
+    if (!post.allowed) {
+      return { data: null, error: lockoutMessage(post.lockedUntil), lockedUntil: post.lockedUntil };
+    }
+    return { data: null, error: 'Incorrect username or password.', remainingAttempts: post.remainingAttempts };
   }
 
   try {
@@ -230,9 +199,9 @@ export async function signIn(username, password) {
     });
 
     if (error) {
-      await recordAttempt(cleanUsername, 'login', false);
+      await recordAttempt(rateLimitId, 'login', false);
       // Re-check after recording so we can surface a lockout immediately.
-      const post = await checkRateLimit(cleanUsername, 'login');
+      const post = await checkRateLimit(rateLimitId, 'login');
       if (!post.allowed) {
         return { data: null, error: lockoutMessage(post.lockedUntil), lockedUntil: post.lockedUntil };
       }
@@ -245,10 +214,10 @@ export async function signIn(username, password) {
       return { data: null, error: base + hint, remainingAttempts: remaining };
     }
 
-    await recordAttempt(cleanUsername, 'login', true);
+    await recordAttempt(rateLimitId, 'login', true);
     return { data, error: null };
   } catch (err) {
-    await recordAttempt(cleanUsername, 'login', false);
+    await recordAttempt(rateLimitId, 'login', false);
     return { data: null, error: friendlyAuthError(err) };
   }
 }
@@ -358,46 +327,60 @@ export async function changePassword(oldPassword, newPassword) {
 }
 
 // ---------------------------------------------------------------------------
-// Invites / sharing
+// Team management (org members)
 // ---------------------------------------------------------------------------
 
 /**
- * Invite a user by username. Creates a real auth account with a generated temp
- * password, records a pending_invite (for the admin's reference), and grants
- * the given role via contact_access. Returns the temp password to display once.
+ * Create a new member in the current admin's organization. Creates a real auth
+ * account with a generated temp password; the new user's org_id/role are stamped
+ * via signup metadata → handle_new_user() trigger, so the profile is born
+ * correct (no follow-up UPDATE). The new user is forced to change their password
+ * on first login. Returns the temp password to display once.
  *
- * NOTE: this uses the public signUp flow (anon key) rather than the admin API,
- * so it works without a service-role key on the client. The invited user's
- * profile is flagged (via user metadata → trigger) to force a password change.
+ * Uses the public signUp flow (anon key) rather than the admin API, so it works
+ * without a service-role key on the client — we snapshot and restore the admin's
+ * session around the signUp call (which otherwise swaps the active session).
  */
-export async function inviteUser(username, role = 'viewer') {
+export async function createOrgMember(username, role = 'viewer') {
   const cleanUsername = normalizeUsername(username);
 
   const validationError = validateUsername(cleanUsername);
   if (validationError) return { data: null, error: validationError };
-  if (!['viewer', 'editor'].includes(role)) return { data: null, error: 'Invalid role.' };
+  if (!['admin', 'editor', 'viewer'].includes(role)) return { data: null, error: 'Invalid role.' };
 
   const internalEmail = generateInternalEmail();
   const tempPassword = generateTempPassword();
 
   try {
-    const { taken } = await isUsernameTaken(cleanUsername);
-    if (taken) return { data: null, error: 'Username already taken.' };
+    // Resolve the admin's own org from their profile.
+    const { data: adminData } = await supabase.auth.getUser();
+    const adminId = adminData?.user?.id;
+    if (!adminId) return { data: null, error: 'You must be signed in to add members.' };
 
-    const { data: ownerData } = await supabase.auth.getUser();
-    const ownerId = ownerData?.user?.id;
-    if (!ownerId) return { data: null, error: 'You must be signed in to invite users.' };
+    const { data: adminProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('organization_id')
+      .eq('id', adminId)
+      .single();
+    if (profileError) throw profileError;
+    const organizationId = adminProfile?.organization_id;
+    if (!organizationId) return { data: null, error: 'Your account is not linked to an organization.' };
 
     // Preserve the current session — signUp swaps the active session to the
     // newly created user, so we snapshot and restore it afterwards.
     const { data: sessionData } = await supabase.auth.getSession();
     const currentSession = sessionData?.session;
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email: internalEmail,
       password: tempPassword,
       options: {
-        data: { username: cleanUsername, password_change_required: true, invited_by: ownerId },
+        data: {
+          username: cleanUsername,
+          organization_id: organizationId,
+          role,
+          password_change_required: true,
+        },
       },
     });
 
@@ -411,33 +394,8 @@ export async function inviteUser(username, role = 'viewer') {
 
     if (signUpError) throw signUpError;
 
-    const invitedUserId = signUpData?.user?.id;
-
-    // Record the pending invite for the admin's records. `email` holds the
-    // internal (random) email only to satisfy the NOT NULL/UNIQUE column — it
-    // is never displayed anywhere in the UI.
-    const { error: inviteError } = await supabase.from('pending_invites').insert({
-      invited_by: ownerId,
-      email: internalEmail,
-      username: cleanUsername,
-      temp_password: tempPassword,
-      role,
-    });
-    if (inviteError && !inviteError.message?.toLowerCase().includes('duplicate')) {
-      throw inviteError;
-    }
-
-    // Grant access now if we have the new user's id.
-    if (invitedUserId) {
-      const { error: accessError } = await supabase.from('contact_access').upsert(
-        { owner_id: ownerId, shared_with_id: invitedUserId, role },
-        { onConflict: 'owner_id,shared_with_id' }
-      );
-      if (accessError) throw accessError;
-    }
-
     return {
-      data: { username: cleanUsername, tempPassword, role, userId: invitedUserId },
+      data: { username: cleanUsername, tempPassword, role },
       error: null,
     };
   } catch (err) {
@@ -446,73 +404,34 @@ export async function inviteUser(username, role = 'viewer') {
 }
 
 /**
- * List users the current owner has shared contacts with, joined to their username.
+ * List all members of the current user's organization. Relies on the
+ * `org_members_select_profiles` RLS policy — no RPC needed.
  */
-export async function listSharedUsers() {
+export async function listOrgMembers() {
   try {
-    const { data: ownerData } = await supabase.auth.getUser();
-    const ownerId = ownerData?.user?.id;
-    if (!ownerId) return { data: [], error: 'Not signed in.' };
-
     const { data, error } = await supabase
-      .from('contact_access')
-      .select('id, shared_with_id, role, created_at, user_profiles!contact_access_shared_with_id_fkey(username)')
-      .eq('owner_id', ownerId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      // Fallback: the FK-embedded select may fail if the relationship isn't
-      // exposed; fetch access rows then resolve usernames from pending_invites.
-      const { data: rows, error: rowsError } = await supabase
-        .from('contact_access')
-        .select('id, shared_with_id, role, created_at')
-        .eq('owner_id', ownerId)
-        .order('created_at', { ascending: false });
-      if (rowsError) throw rowsError;
-
-      return {
-        data: (rows || []).map((r) => ({
-          id: r.id,
-          shared_with_id: r.shared_with_id,
-          role: r.role,
-          created_at: r.created_at,
-          username: null, // username unknown without the join
-        })),
-        error: null,
-      };
-    }
-
-    return {
-      data: (data || []).map((r) => ({
-        id: r.id,
-        shared_with_id: r.shared_with_id,
-        role: r.role,
-        created_at: r.created_at,
-        username: r.user_profiles?.username || null,
-      })),
-      error: null,
-    };
+      .from('user_profiles')
+      .select('id, username, role, created_at')
+      .order('created_at');
+    if (error) throw error;
+    return { data: data || [], error: null };
   } catch (err) {
-    console.error('Failed to list shared users:', err);
+    console.error('Failed to list org members:', err);
     return { data: [], error: err.message };
   }
 }
 
 /**
- * Update the role of an existing share.
+ * Update a member's role. Relies on the `admin_update_org_profiles` RLS policy
+ * plus the role-escalation-guard trigger (which only lets admins change roles).
  */
-export async function updateAccessRole(sharedWithId, role) {
-  if (!['viewer', 'editor'].includes(role)) return { error: 'Invalid role.' };
+export async function updateMemberRole(userId, role) {
+  if (!['admin', 'editor', 'viewer'].includes(role)) return { error: 'Invalid role.' };
   try {
-    const { data: ownerData } = await supabase.auth.getUser();
-    const ownerId = ownerData?.user?.id;
-    if (!ownerId) return { error: 'Not signed in.' };
-
     const { error } = await supabase
-      .from('contact_access')
+      .from('user_profiles')
       .update({ role })
-      .eq('owner_id', ownerId)
-      .eq('shared_with_id', sharedWithId);
+      .eq('id', userId);
     if (error) throw error;
     return { error: null };
   } catch (err) {
@@ -521,19 +440,12 @@ export async function updateAccessRole(sharedWithId, role) {
 }
 
 /**
- * Revoke a user's access to the current owner's contacts.
+ * Delete an organization member (admin-only, cascades to all their data).
+ * Uses the delete_org_member RPC which checks authorization server-side.
  */
-export async function revokeAccess(sharedWithId) {
+export async function deleteOrgMember(userId) {
   try {
-    const { data: ownerData } = await supabase.auth.getUser();
-    const ownerId = ownerData?.user?.id;
-    if (!ownerId) return { error: 'Not signed in.' };
-
-    const { error } = await supabase
-      .from('contact_access')
-      .delete()
-      .eq('owner_id', ownerId)
-      .eq('shared_with_id', sharedWithId);
+    const { error } = await supabase.rpc('delete_org_member', { target_user_id: userId });
     if (error) throw error;
     return { error: null };
   } catch (err) {

@@ -32,7 +32,7 @@ export default function TableView({ contacts, getAccess, onStatusChange, onOpen 
         </thead>
         <tbody>
           {contacts.map((contact) => {
-            const access = getAccess ? getAccess(contact) : { role: 'owner', canEdit: true, label: '—' };
+            const access = getAccess ? getAccess(contact) : { role: 'admin', canEdit: true, label: '—' };
             const contactName = contact.prefix
               ? `${contact.prefix} ${contact.contact_person || 'N/A'}`
               : contact.contact_person || 'N/A';

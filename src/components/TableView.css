@@ -74,7 +74,7 @@
   white-space: nowrap;
 }
 
-.table-badge.owner {
+.table-badge.admin {
   background: #e3f2fd;
   color: #1565c0;
 }

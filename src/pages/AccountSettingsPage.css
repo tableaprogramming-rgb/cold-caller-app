@@ -188,3 +188,257 @@
 .asp-revoke:hover {
   background: #fdecea;
 }
+
+.asp-grant-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.asp-grant-form select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.asp-role-group {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.asp-role-group legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.asp-role-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.asp-role-group input[type="radio"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.asp-grant-form button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.asp-grant-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.asp-delete-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asp-delete {
+  padding: 6px 14px;
+  background: #fff;
+  color: #d32f2f;
+  border: 1px solid #f0c0c0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.asp-delete:hover:not(:disabled) {
+  background: #fdecea;
+}
+
+.asp-delete:active:not(:disabled) {
+  background: #f5b3b3;
+}
+
+.asp-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #999;
+  border-color: #ddd;
+}
+
+.asp-tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 16px;
+  color: #d32f2f;
+  cursor: help;
+  border-radius: 50%;
+  background: rgba(211, 47, 47, 0.1);
+  transition: all 0.2s;
+  position: relative;
+}
+
+.asp-tooltip-icon:hover {
+  background: rgba(211, 47, 47, 0.2);
+  transform: scale(1.1);
+}
+
+/* Tooltip popup on hover */
+.asp-tooltip-icon:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+/* Arrow pointing down */
+.asp-tooltip-icon:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 118%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #333;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Delete confirmation modal */
+.asp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.asp-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.asp-modal h2 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  color: #2d2d2d;
+}
+
+.asp-modal-warning {
+  color: #d32f2f;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.asp-modal-hint {
+  color: #666;
+  font-size: 13px;
+  margin: 0 0 12px 0;
+}
+
+.asp-modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.asp-modal-input:focus {
+  outline: none;
+  border-color: #d32f2f;
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+}
+
+.asp-modal-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.asp-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.asp-modal-cancel {
+  padding: 10px 20px;
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.asp-modal-cancel:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.asp-modal-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.asp-modal-delete {
+  padding: 10px 20px;
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.asp-modal-delete:hover:not(:disabled) {
+  background: #b71c1c;
+}
+
+.asp-modal-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

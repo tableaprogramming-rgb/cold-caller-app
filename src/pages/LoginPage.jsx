@@ -4,10 +4,13 @@ import './AuthPages.css';
 
 /**
  * Login form with built-in rate limiting (handled in signIn()).
- * @param {() => void} onSuccess       called after a successful sign in
- * @param {() => void} onGoToRegister  switch to the register view
+ * Collects Organization + Username + Password. Self-registration has been
+ * removed — accounts are created by an admin.
+ *
+ * @param {() => void} onSuccess  called after a successful sign in
  */
-export default function LoginPage({ onSuccess, onGoToRegister }) {
+export default function LoginPage({ onSuccess }) {
+  const [orgName, setOrgName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,14 +20,14 @@ export default function LoginPage({ onSuccess, onGoToRegister }) {
     e.preventDefault();
     setError('');
 
-    if (!username.trim() || !password) {
-      setError('Please enter your username and password.');
+    if (!orgName.trim() || !username.trim() || !password) {
+      setError('Please enter your organization, username and password.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const { data, error: signInError } = await signIn(username, password);
+      const { data, error: signInError } = await signIn(orgName, username, password);
       if (signInError) {
         setError(signInError);
         return;
@@ -51,6 +54,19 @@ export default function LoginPage({ onSuccess, onGoToRegister }) {
         {error && <div className="auth-error" role="alert">{error}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
+          <div className="auth-field">
+            <label htmlFor="login-org">Organization</label>
+            <input
+              id="login-org"
+              type="text"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              disabled={submitting}
+              autoComplete="organization"
+              placeholder="Your organization"
+            />
+          </div>
+
           <div className="auth-field">
             <label htmlFor="login-username">Username</label>
             <input
@@ -81,13 +97,6 @@ export default function LoginPage({ onSuccess, onGoToRegister }) {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
-        <div className="auth-footer">
-          Don&apos;t have an account?{' '}
-          <button type="button" className="auth-link" onClick={onGoToRegister} disabled={submitting}>
-            Register
-          </button>
-        </div>
       </div>
     </div>
   );

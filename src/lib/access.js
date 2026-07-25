@@ -1,32 +1,18 @@
 /**
- * Compute the current user's relationship to a contact.
+ * Compute the current user's access to a contact.
  *
- * @param {object} contact  the contact row (has user_id)
- * @param {string} userId   current user's id
- * @param {Map<string,string>} sharedRoleByOwner
- *        map of owner_id -> role ('viewer'|'editor') for contacts shared *with*
- *        the current user.
- * @returns {{ isOwner: boolean, role: 'owner'|'editor'|'viewer', canEdit: boolean, label: string }}
+ * Under the org model every member has uniform access to all of the org's
+ * contacts, driven solely by their role (admin/editor/viewer). The `contact`
+ * param is unused but retained for call-site stability (App.jsx passes it first
+ * everywhere). Return shape is unchanged so consuming components need no changes.
+ *
+ * @param {object} contact  the contact row (unused — kept for call-site stability)
+ * @param {string} userRole the current user's org role ('admin'|'editor'|'viewer')
+ * @returns {{ isOwner: boolean, role: 'admin'|'editor'|'viewer', canEdit: boolean, label: string }}
  */
-export function getContactAccess(contact, userId, sharedRoleByOwner) {
-  if (!contact || !userId) {
-    return { isOwner: false, role: 'viewer', canEdit: false, label: 'Read-only' };
-  }
-
-  // Owner (also covers legacy contacts assigned to the admin).
-  if (contact.user_id === userId) {
-    return { isOwner: true, role: 'owner', canEdit: true, label: 'Your contact' };
-  }
-
-  // Shared with the current user.
-  const role = sharedRoleByOwner?.get?.(contact.user_id);
-  if (role === 'editor') {
-    return { isOwner: false, role: 'editor', canEdit: true, label: 'Shared • Editor' };
-  }
-  if (role === 'viewer') {
-    return { isOwner: false, role: 'viewer', canEdit: false, label: 'Shared • Viewer' };
-  }
-
-  // Legacy/unowned contact (user_id NULL) — treat as read-only for safety.
-  return { isOwner: false, role: 'viewer', canEdit: false, label: 'Read-only' };
+export function getContactAccess(contact, userRole) {
+  if (!userRole) return { isOwner: false, role: 'viewer', canEdit: false, label: 'Read-only' };
+  if (userRole === 'admin') return { isOwner: true, role: 'admin', canEdit: true, label: 'Admin' };
+  if (userRole === 'editor') return { isOwner: false, role: 'editor', canEdit: true, label: 'Editor' };
+  return { isOwner: false, role: 'viewer', canEdit: false, label: 'Viewer' };
 }

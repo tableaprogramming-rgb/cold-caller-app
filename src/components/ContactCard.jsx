@@ -58,8 +58,8 @@ export default function ContactCard({ contact, onUpdate, access, onOpen }) {
     : contact.contact_person || 'N/A';
 
   const badgeClass =
-    access?.role === 'owner'
-      ? 'owner'
+    access?.role === 'admin'
+      ? 'admin'
       : access?.role === 'editor'
       ? 'editor'
       : 'viewer';

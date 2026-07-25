@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { getUserProfile, isPasswordChangeRequired, signOut } from './lib/authHelpers';
 import { getContactAccess } from './lib/access';
@@ -11,7 +11,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import FirstLoginModal from './components/FirstLoginModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import './App.css';
 
@@ -24,7 +23,6 @@ function App() {
   const [needsPasswordChange, setNeedsPasswordChange] = useState(false);
 
   // --- view state ---
-  const [authView, setAuthView] = useState('login'); // 'login' | 'register'
   const [appView, setAppView] = useState('board'); // 'board' | 'table'
   const [route, setRoute] = useState('app'); // 'app' | 'settings'
   const [selectedContact, setSelectedContact] = useState(null);
@@ -33,7 +31,7 @@ function App() {
   // --- data state ---
   const [contacts, setContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
-  const [sharedRoleByOwner, setSharedRoleByOwner] = useState(new Map());
+  const [orgName, setOrgName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
@@ -60,6 +58,7 @@ function App() {
         setNeedsPasswordChange(false);
         setContacts([]);
         setFilteredContacts([]);
+        setOrgName('');
         setRoute('app');
       }
     });
@@ -81,6 +80,18 @@ function App() {
       if (!active) return;
       setProfile(data);
       setNeedsPasswordChange(isPasswordChangeRequired(data));
+
+      // Resolve the org name for the header.
+      if (data?.organization_id) {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('name')
+          .eq('id', data.organization_id)
+          .single();
+        if (active) setOrgName(org?.name || '');
+      } else if (active) {
+        setOrgName('');
+      }
     })();
     return () => {
       active = false;
@@ -88,25 +99,14 @@ function App() {
   }, [user]);
 
   // -------------------------------------------------------------------------
-  // Fetch contacts + sharing map once authenticated and past first-login gate
+  // Fetch contacts once authenticated and past first-login gate. Org-scoped RLS
+  // returns exactly the org's contacts — no sharing map needed.
   // -------------------------------------------------------------------------
   const fetchData = useCallback(async () => {
     if (!user) return;
     setDataLoading(true);
     setDataError('');
     try {
-      // Roles for contacts shared WITH me (owner_id -> role).
-      const { data: accessRows, error: accessError } = await supabase
-        .from('contact_access')
-        .select('owner_id, role')
-        .eq('shared_with_id', user.id);
-      if (accessError) throw accessError;
-
-      const roleMap = new Map();
-      (accessRows || []).forEach((r) => roleMap.set(r.owner_id, r.role));
-      setSharedRoleByOwner(roleMap);
-
-      // RLS returns only contacts I own or that are shared with me.
       const { data, error } = await supabase.from('contacts').select('*');
       if (error) throw error;
 
@@ -145,16 +145,11 @@ function App() {
   }, [contacts, searchQuery]);
 
   // -------------------------------------------------------------------------
-  // Access helper bound to current user + sharing map
+  // Access helper bound to the current user's org role
   // -------------------------------------------------------------------------
   const getAccess = useCallback(
-    (contact) => getContactAccess(contact, user?.id, sharedRoleByOwner),
-    [user, sharedRoleByOwner]
-  );
-
-  const ownedCount = useMemo(
-    () => contacts.filter((c) => c.user_id === user?.id).length,
-    [contacts, user]
+    (contact) => getContactAccess(contact, profile?.role),
+    [profile]
   );
 
   // -------------------------------------------------------------------------
@@ -205,19 +200,10 @@ function App() {
     return <div className="loading">Loading…</div>;
   }
 
-  // Not authenticated → auth screens.
-  const authFallback =
-    authView === 'register' ? (
-      <RegisterPage
-        onSuccess={() => setAuthView('login')}
-        onGoToLogin={() => setAuthView('login')}
-      />
-    ) : (
-      <LoginPage
-        onSuccess={() => { /* session listener updates state */ }}
-        onGoToRegister={() => setAuthView('register')}
-      />
-    );
+  // Not authenticated → login screen. Self-registration has been removed.
+  const authFallback = (
+    <LoginPage onSuccess={() => { /* session listener updates state */ }} />
+  );
 
   return (
     <ErrorBoundary onReset={() => window.location.reload()}>
@@ -230,14 +216,18 @@ function App() {
             }}
           />
         ) : route === 'settings' ? (
-          <AccountSettingsPage onBack={() => { setRoute('app'); fetchData(); }} />
+          <AccountSettingsPage
+            role={profile?.role}
+            onBack={() => { setRoute('app'); fetchData(); }}
+          />
         ) : (
           <div className="app">
             <header className="app-header" data-session={session ? 'active' : 'none'}>
               <div className="header-left">
                 <h1>Cold Calling Tracker</h1>
                 <p>
-                  {contacts.length} contact{contacts.length === 1 ? '' : 's'} visible • {ownedCount} owned
+                  {contacts.length} contact{contacts.length === 1 ? '' : 's'}
+                  {orgName ? ` • ${orgName}` : ''}
                 </p>
               </div>
               <div className="header-right">
@@ -245,7 +235,7 @@ function App() {
                   {profile?.username || user?.user_metadata?.username || 'Account'}
                 </span>
                 <button className="header-btn" onClick={() => setRoute('settings')}>
-                  Account
+                  Team Management
                 </button>
                 <button className="header-btn header-logout" onClick={handleLogout}>
                   Log out
@@ -307,6 +297,7 @@ function App() {
             {showNewContactModal && (
               <NewContactModal
                 user={user}
+                organizationId={profile?.organization_id}
                 onClose={() => setShowNewContactModal(false)}
                 onContactAdded={handleContactAdded}
               />

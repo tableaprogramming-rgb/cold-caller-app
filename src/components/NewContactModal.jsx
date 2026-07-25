@@ -7,11 +7,12 @@ const STAGES = ['New', 'To Call', 'Called', 'No Answer', 'For Demo', 'Done'];
 /**
  * Modal for creating a new contact.
  *
- * @param {object} user  current user (for user_id assignment)
+ * @param {object} user  current user (for the informal user_id audit trail)
+ * @param {string} organizationId  the org the contact belongs to (ownership key)
  * @param {() => void} onClose
  * @param {(newContact) => void} onContactAdded  called with the new contact
  */
-export default function NewContactModal({ user, onClose, onContactAdded }) {
+export default function NewContactModal({ user, organizationId, onClose, onContactAdded }) {
   const [formData, setFormData] = useState({
     company: '',
     contact_person: '',
@@ -62,6 +63,7 @@ export default function NewContactModal({ user, onClose, onContactAdded }) {
             address: formData.address.trim() || null,
             status: formData.status,
             comments: formData.comments.trim() || null,
+            organization_id: organizationId,
             user_id: user?.id,
           },
         ])

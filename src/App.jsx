@@ -223,7 +223,7 @@ function App() {
           />
         ) : (
           <div className="app">
-            <header className="app-header" data-session={session ? 'active' : 'none'}>
+            <header className="app-header" data-session={session ? 'active' : 'none'} title="Cold Calling Tracker - Raykan">
               <div className="header-left">
                 <h1>Cold Calling Tracker</h1>
                 <p>

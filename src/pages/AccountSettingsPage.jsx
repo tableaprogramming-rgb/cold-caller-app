@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { listOrgMembers, createOrgMember, updateMemberRole, deleteOrgMember } from '../lib/authHelpers';
+import { listOrgMembers, createOrgMember, updateMemberRole, deleteOrgMember, resetMemberPassword } from '../lib/authHelpers';
 import './AccountSettingsPage.css';
 
 const ROLE_LABELS = {
@@ -36,6 +36,10 @@ export default function AccountSettingsPage({ role, onBack }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { userId, username }
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  const [resetingId, setResetingId] = useState(null); // userId being reset
+  const [resetResult, setResetResult] = useState(null); // { username, tempPassword }
+  const [resetCopied, setResetCopied] = useState(false);
 
   const loadMembers = useCallback(async () => {
     setLoading(true);
@@ -123,6 +127,30 @@ export default function AccountSettingsPage({ role, onBack }) {
         setTimeout(() => setCopied(false), 2000);
       },
       () => setCopied(false)
+    );
+  }
+
+  async function handleResetPassword(userId, username) {
+    setResetingId(userId);
+    setResetResult(null);
+    setResetCopied(false);
+    const { data, error } = await resetMemberPassword(userId);
+    setResetingId(null);
+    if (error) {
+      setListError(error);
+      return;
+    }
+    setResetResult({ username, tempPassword: data.tempPassword });
+  }
+
+  function copyResetPassword() {
+    if (!resetResult?.tempPassword) return;
+    navigator.clipboard?.writeText(resetResult.tempPassword).then(
+      () => {
+        setResetCopied(true);
+        setTimeout(() => setResetCopied(false), 2000);
+      },
+      () => setResetCopied(false)
     );
   }
 
@@ -230,7 +258,14 @@ export default function AccountSettingsPage({ role, onBack }) {
                     </td>
                     {isAdmin && (
                       <td>
-                        <div className="asp-delete-cell">
+                        <div className="asp-actions-cell">
+                          <button
+                            className="asp-reset-btn"
+                            onClick={() => handleResetPassword(m.id, m.username || m.id)}
+                            disabled={resetingId === m.id}
+                          >
+                            {resetingId === m.id ? 'Resetting…' : 'Reset Password'}
+                          </button>
                           <button
                             className="asp-delete"
                             onClick={() => openDeleteConfirm(m.id, m.username || m.id)}
@@ -289,6 +324,35 @@ export default function AccountSettingsPage({ role, onBack }) {
                 disabled={deleting || deleteConfirmInput !== deleteConfirm.username}
               >
                 {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password reset result modal */}
+      {resetResult && (
+        <div className="asp-modal-overlay" onClick={() => setResetResult(null)}>
+          <div className="asp-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Password Reset</h2>
+            <p className="asp-modal-hint">
+              Password reset for <strong>{resetResult.username}</strong>. Share this temporary password:
+            </p>
+            <div className="asp-temp-pw">
+              <code>{resetResult.tempPassword}</code>
+              <button type="button" onClick={copyResetPassword}>
+                {resetCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <p className="asp-modal-hint">
+              They&apos;ll be required to set a new password on next login.
+            </p>
+            <div className="asp-modal-actions">
+              <button
+                className="asp-modal-cancel"
+                onClick={() => setResetResult(null)}
+              >
+                Done
               </button>
             </div>
           </div>

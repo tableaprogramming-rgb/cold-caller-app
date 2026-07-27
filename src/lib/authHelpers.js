@@ -452,3 +452,39 @@ export async function deleteOrgMember(userId) {
     return { error: friendlyAuthError(err) };
   }
 }
+
+/**
+ * Reset a team member's password (admin-only). Generates a new temp password
+ * and forces password change on next login. Returns the temp password to display.
+ */
+export async function resetMemberPassword(userId) {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    if (!token) {
+      return { data: null, error: 'You must be signed in to reset passwords.' };
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(`${supabaseUrl}/functions/v1/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ targetUserId: userId }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: result.error || 'Failed to reset password.' };
+    }
+
+    return { data: { tempPassword: result.tempPassword }, error: null };
+  } catch (err) {
+    console.error('Password reset error:', err);
+    return { data: null, error: friendlyAuthError(err) };
+  }
+}

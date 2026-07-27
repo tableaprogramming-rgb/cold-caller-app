@@ -248,10 +248,42 @@
   cursor: not-allowed;
 }
 
+.asp-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .asp-delete-cell {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.asp-reset-btn {
+  padding: 6px 12px;
+  background: #fff;
+  color: #667eea;
+  border: 1px solid #d4d8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.asp-reset-btn:hover:not(:disabled) {
+  background: #f5f7ff;
+  border-color: #667eea;
+}
+
+.asp-reset-btn:active:not(:disabled) {
+  background: #e8ecff;
+}
+
+.asp-reset-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .asp-delete {

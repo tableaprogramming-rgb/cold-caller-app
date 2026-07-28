@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { logContactChange } from '../lib/contactHistory';
 import './ContactCard.css';
 
 export default function ContactCard({ contact, onUpdate, access, onOpen }) {
@@ -30,6 +31,12 @@ export default function ContactCard({ contact, onUpdate, access, onOpen }) {
       if (error) throw error;
 
       onUpdate(data);
+
+      // --- Application-level audit logging (replaces the old DB trigger) ---
+      // Fire-and-forget: logging failure shouldn't block the comment save
+      // that already succeeded.
+      logContactChange(contact.id, contact, data, 'updated');
+
       setIsEditingComments(false);
     } catch (error) {
       console.error('Error updating comments:', error);

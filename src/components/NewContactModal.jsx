@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { logContactChange } from '../lib/contactHistory';
 import './DetailModal.css';
 
 const STAGES = ['New', 'To Call', 'Called', 'No Answer', 'For Demo', 'Done'];
@@ -72,6 +73,12 @@ export default function NewContactModal({ user, organizationId, onClose, onConta
 
       if (insertError) throw insertError;
       onContactAdded?.(data);
+
+      // --- Application-level audit logging (replaces the old DB trigger) ---
+      // 'created' action: old_values is null (nothing existed before this).
+      // Fire-and-forget: logging failure shouldn't block contact creation.
+      logContactChange(data.id, null, data, 'created');
+
       onClose?.();
     } catch (err) {
       console.error('Error creating contact:', err);

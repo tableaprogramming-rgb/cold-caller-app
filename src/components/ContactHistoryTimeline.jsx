@@ -72,8 +72,11 @@ export default function ContactHistoryTimeline({ events = [] }) {
         return (
           <div key={event.id} className="cht-event">
             <div className="cht-header">
-              <div className="cht-actor">{actor}</div>
-              <div className="cht-time">{timestamp}</div>
+              <div className="cht-company">{event.company_snapshot || 'Unknown Company'}</div>
+              <div className="cht-meta">
+                <span className="cht-actor">{actor}</span>
+                <span className="cht-time">{timestamp}</span>
+              </div>
             </div>
 
             {event.action === 'created' && (

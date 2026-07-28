@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { getUserProfile, isPasswordChangeRequired, signOut } from './lib/authHelpers';
 import { getContactAccess } from './lib/access';
+import { logContactChange } from './lib/contactHistory';
 import KanbanBoard from './components/KanbanBoard';
 import TableView from './components/TableView';
 import SearchBar from './components/SearchBar';
@@ -180,6 +181,11 @@ function App() {
         .single();
       if (error) throw error;
       handleCardUpdate(data);
+
+      // --- Application-level audit logging (replaces the old DB trigger) ---
+      // Fire-and-forget: logging failure shouldn't block the status update
+      // that already succeeded.
+      logContactChange(id, contact, data, 'updated');
     } catch (err) {
       console.error('Error updating status:', err);
       alert('Failed to update status. You may not have permission to edit this contact.');

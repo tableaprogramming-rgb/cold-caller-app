@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { listContactHistory } from '../lib/contactHistory';
+import { listContactHistory, logContactChange } from '../lib/contactHistory';
 import Tabs from './Design/Tabs';
 import ContactHistoryTimeline from './ContactHistoryTimeline';
 import './DetailModal.css';
@@ -77,6 +77,12 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
 
       if (updateError) throw updateError;
       onUpdate?.(data);
+
+      // --- Application-level audit logging (replaces the old DB trigger) ---
+      // Log status + comment changes made from this modal. Fire-and-forget:
+      // logging failure shouldn't block the save the user already confirmed.
+      logContactChange(contact.id, contact, data, 'updated');
+
       onClose?.();
     } catch (err) {
       console.error('Error saving contact:', err);

@@ -1,5 +1,6 @@
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { supabase } from '../lib/supabaseClient';
+import { logContactChange } from '../lib/contactHistory';
 import Column from './Column';
 import './KanbanBoard.css';
 
@@ -33,6 +34,7 @@ export default function KanbanBoard({ contacts, onCardUpdate, getAccess, onOpen 
   }
 
   async function updateContactStatus(id, newStatus) {
+    const previousContact = contacts.find((c) => c.id === id);
     try {
       const { data, error } = await supabase
         .from('contacts')
@@ -44,6 +46,11 @@ export default function KanbanBoard({ contacts, onCardUpdate, getAccess, onOpen 
       if (error) throw error;
 
       onCardUpdate(data);
+
+      // --- Application-level audit logging (replaces the old DB trigger) ---
+      // Fire-and-forget: logging failure shouldn't block the UI update that
+      // already succeeded.
+      logContactChange(id, previousContact, data, 'updated');
     } catch (error) {
       console.error('Error updating contact status:', error);
       alert('Failed to update contact status. You may not have permission to edit this contact.');

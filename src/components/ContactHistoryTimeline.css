@@ -27,15 +27,27 @@
 
 .cht-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cht-company {
+  font-weight: 700;
+  color: #2d2d2d;
+  font-size: 15px;
+}
+
+.cht-meta {
+  display: flex;
+  gap: 16px;
   align-items: center;
-  margin-bottom: 8px;
+  font-size: 13px;
 }
 
 .cht-actor {
   font-weight: 600;
-  color: #333;
-  font-size: 14px;
+  color: #555;
 }
 
 .cht-time {

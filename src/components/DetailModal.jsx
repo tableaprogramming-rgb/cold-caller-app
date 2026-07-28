@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { listContactHistory, logContactChange } from '../lib/contactHistory';
-import Tabs from './Design/Tabs';
 import ContactHistoryTimeline from './ContactHistoryTimeline';
 import './DetailModal.css';
 
@@ -21,7 +20,6 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
   const [status, setStatus] = useState(contact?.status || 'New');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('details');
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -31,14 +29,14 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
     setComments(contact?.comments || '');
     setStatus(contact?.status || 'New');
     setError('');
-    setActiveTab('details');
   }, [contact]);
 
   useEffect(() => {
-    if (activeTab === 'history' && contact?.id && history.length === 0 && !loadingHistory) {
+    if (contact?.id && history.length === 0 && !loadingHistory) {
       loadHistory();
     }
-  }, [activeTab, contact?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contact?.id]);
 
   async function loadHistory() {
     if (!contact?.id) return;
@@ -98,7 +96,7 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
 
   return (
     <div className="dm-overlay" onClick={onClose}>
-      <div className="dm-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div className="dm-modal dm-modal-wide" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="dm-header">
           <h2>{contact.company}</h2>
           <button className="dm-close" onClick={onClose} aria-label="Close">
@@ -108,87 +106,82 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
 
         {access && <span className={`dm-badge ${access.role}`}>{access.label}</span>}
 
-        <Tabs
-          tabs={[
-            { value: 'details', label: 'Details' },
-            { value: 'history', label: 'History' },
-          ]}
-          value={activeTab}
-          onChange={setActiveTab}
-          variant="underline"
-          className="dm-tabs"
-        />
-
-        {activeTab === 'details' && (
-        <div className="dm-body">
-          <DetailRow label="Company" value={contact.company || '—'} />
-          <DetailRow label="Contact" value={contactName} />
-          <DetailRow label="Prefix" value={contact.prefix || '—'} />
-          <DetailRow
-            label="Phone"
-            value={
-              contact.contact_number ? (
-                <a href={`tel:${contact.contact_number}`}>{contact.contact_number}</a>
-              ) : (
-                '—'
-              )
-            }
-          />
-          <DetailRow
-            label="Email"
-            value={
-              contact.email ? (
-                <a href={`mailto:${contact.email}`}>{contact.email}</a>
-              ) : (
-                '—'
-              )
-            }
-          />
-          <DetailRow label="Area Code" value={contact.area_code || '—'} />
-          <DetailRow label="Address" value={contact.address || '—'} />
-
-          <div className="dm-field">
-            <label>Status</label>
-            {canEdit ? (
-              <select value={status} onChange={(e) => setStatus(e.target.value)} disabled={saving}>
-                {STAGES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="dm-static">{contact.status}</span>
-            )}
-          </div>
-
-          <div className="dm-field">
-            <label>Comments</label>
-            {canEdit ? (
-              <textarea
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Add comments about this contact…"
-                disabled={saving}
+        <div className="dm-content-wrapper">
+          {/* Left side: Contact details */}
+          <div className="dm-left-panel">
+            <h3 className="dm-panel-title">Contact Details</h3>
+            <div className="dm-body dm-details-scroll">
+              <DetailRow label="Company" value={contact.company || '—'} />
+              <DetailRow label="Contact" value={contactName} />
+              <DetailRow label="Prefix" value={contact.prefix || '—'} />
+              <DetailRow
+                label="Phone"
+                value={
+                  contact.contact_number ? (
+                    <a href={`tel:${contact.contact_number}`}>{contact.contact_number}</a>
+                  ) : (
+                    '—'
+                  )
+                }
               />
-            ) : (
-              <p className="dm-static">{contact.comments || 'No comments'}</p>
-            )}
+              <DetailRow
+                label="Email"
+                value={
+                  contact.email ? (
+                    <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <DetailRow label="Area Code" value={contact.area_code || '—'} />
+              <DetailRow label="Address" value={contact.address || '—'} />
+
+              <div className="dm-field">
+                <label>Status</label>
+                {canEdit ? (
+                  <select value={status} onChange={(e) => setStatus(e.target.value)} disabled={saving}>
+                    {STAGES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="dm-static">{contact.status}</span>
+                )}
+              </div>
+
+              <div className="dm-field">
+                <label>Comments</label>
+                {canEdit ? (
+                  <textarea
+                    value={comments}
+                    onChange={(e) => setComments(e.target.value)}
+                    placeholder="Add comments about this contact…"
+                    disabled={saving}
+                  />
+                ) : (
+                  <p className="dm-static">{contact.comments || 'No comments'}</p>
+                )}
+              </div>
+
+              {error && <div className="dm-error">{error}</div>}
+            </div>
           </div>
 
-          {error && <div className="dm-error">{error}</div>}
+          {/* Right side: History */}
+          <div className="dm-right-panel">
+            <h3 className="dm-panel-title">Activity History</h3>
+            <div className="dm-body dm-history-scroll">
+              {loadingHistory ? (
+                <p className="dm-loading">Loading history…</p>
+              ) : (
+                <ContactHistoryTimeline events={history} />
+              )}
+            </div>
+          </div>
         </div>
-        )}
-
-        {activeTab === 'history' && (
-        <div className="dm-body">
-          {loadingHistory ? (
-            <p className="dm-loading">Loading history…</p>
-          ) : (
-            <ContactHistoryTimeline events={history} />
-          )}
-        </div>
-        )}
 
         {canEdit && (
           <div className="dm-actions">

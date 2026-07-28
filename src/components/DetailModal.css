@@ -72,6 +72,19 @@
   color: #6a1b9a;
 }
 
+.dm-tabs {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.dm-loading {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+}
+
 .dm-body {
   margin-top: 18px;
 }

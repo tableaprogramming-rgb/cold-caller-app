@@ -12,6 +12,7 @@ import FirstLoginModal from './components/FirstLoginModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import ActivityLogPage from './pages/ActivityLogPage';
 import './App.css';
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
 
   // --- view state ---
   const [appView, setAppView] = useState('board'); // 'board' | 'table'
-  const [route, setRoute] = useState('app'); // 'app' | 'settings'
+  const [route, setRoute] = useState('app'); // 'app' | 'settings' | 'activity-log'
   const [selectedContact, setSelectedContact] = useState(null);
   const [showNewContactModal, setShowNewContactModal] = useState(false);
 
@@ -221,6 +222,11 @@ function App() {
             role={profile?.role}
             onBack={() => { setRoute('app'); fetchData(); }}
           />
+        ) : route === 'activity-log' ? (
+          <ActivityLogPage
+            role={profile?.role}
+            onBack={() => setRoute('app')}
+          />
         ) : (
           <div className="app">
             <header className="app-header" data-session={session ? 'active' : 'none'} title="Cold Calling Tracker - Raykan">
@@ -235,6 +241,9 @@ function App() {
                 <span className="header-username">
                   {profile?.username || user?.user_metadata?.username || 'Account'}
                 </span>
+                <button className="header-btn" onClick={() => setRoute('activity-log')}>
+                  Activity Log
+                </button>
                 <button className="header-btn" onClick={() => setRoute('settings')}>
                   Team Management
                 </button>

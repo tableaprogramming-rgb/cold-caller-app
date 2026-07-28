@@ -1,0 +1,175 @@
+.cht-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cht-empty {
+  color: #888;
+  font-size: 14px;
+  padding: 20px;
+  text-align: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.cht-event {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fafafa;
+  transition: all 0.2s;
+}
+
+.cht-event:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.cht-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cht-actor {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.cht-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.cht-action {
+  font-size: 14px;
+  color: #555;
+  font-style: italic;
+}
+
+.cht-action.cht-delete {
+  color: #d32f2f;
+}
+
+.cht-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.cht-change {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.cht-field {
+  font-weight: 600;
+  color: #333;
+  min-width: 80px;
+}
+
+.cht-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cht-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cht-arrow {
+  color: #999;
+  font-size: 12px;
+}
+
+.cht-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.cht-old {
+  color: #d32f2f;
+  text-decoration: line-through;
+  font-family: monospace;
+  font-size: 12px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cht-new {
+  color: #2e7d32;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cht-expand-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+  margin-left: auto;
+}
+
+.cht-expand-btn:hover {
+  color: #764ba2;
+}
+
+.cht-expanded-comment {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+  grid-column: 1 / -1;
+}
+
+.cht-exp-label {
+  font-weight: 600;
+  font-size: 12px;
+  color: #666;
+  margin: 8px 0 4px 0;
+  text-transform: uppercase;
+}
+
+.cht-exp-text {
+  background: #fafafa;
+  border: 1px solid #efefef;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  color: #555;
+  max-height: 150px;
+  overflow-y: auto;
+}

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { listContactHistory } from '../lib/contactHistory';
+import Tabs from './Design/Tabs';
+import ContactHistoryTimeline from './ContactHistoryTimeline';
 import './DetailModal.css';
 
 const STAGES = ['New', 'To Call', 'Called', 'No Answer', 'For Demo', 'Done'];
@@ -18,6 +21,9 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
   const [status, setStatus] = useState(contact?.status || 'New');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('details');
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const canEdit = access ? access.canEdit : true;
 
@@ -25,7 +31,24 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
     setComments(contact?.comments || '');
     setStatus(contact?.status || 'New');
     setError('');
+    setActiveTab('details');
   }, [contact]);
+
+  useEffect(() => {
+    if (activeTab === 'history' && contact?.id && history.length === 0 && !loadingHistory) {
+      loadHistory();
+    }
+  }, [activeTab, contact?.id]);
+
+  async function loadHistory() {
+    if (!contact?.id) return;
+    setLoadingHistory(true);
+    const { data, error: histError } = await listContactHistory(contact.id);
+    if (!histError) {
+      setHistory(data);
+    }
+    setLoadingHistory(false);
+  }
 
   useEffect(() => {
     function onKey(e) {
@@ -79,6 +102,18 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
 
         {access && <span className={`dm-badge ${access.role}`}>{access.label}</span>}
 
+        <Tabs
+          tabs={[
+            { value: 'details', label: 'Details' },
+            { value: 'history', label: 'History' },
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+          variant="underline"
+          className="dm-tabs"
+        />
+
+        {activeTab === 'details' && (
         <div className="dm-body">
           <DetailRow label="Company" value={contact.company || '—'} />
           <DetailRow label="Contact" value={contactName} />
@@ -137,6 +172,17 @@ export default function DetailModal({ contact, access, onClose, onUpdate }) {
 
           {error && <div className="dm-error">{error}</div>}
         </div>
+        )}
+
+        {activeTab === 'history' && (
+        <div className="dm-body">
+          {loadingHistory ? (
+            <p className="dm-loading">Loading history…</p>
+          ) : (
+            <ContactHistoryTimeline events={history} />
+          )}
+        </div>
+        )}
 
         {canEdit && (
           <div className="dm-actions">

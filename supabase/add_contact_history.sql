@@ -76,7 +76,7 @@ BEGIN
     );
 
     -- Remove null entries (fields that didn't change)
-    v_changes := v_changes - (SELECT jsonb_agg(key) FROM jsonb_each(v_changes) WHERE value IS NULL);
+    v_changes := v_changes - (SELECT array_agg(key)::text[] FROM jsonb_each(v_changes) WHERE value IS NULL);
 
     -- Only log if something actually changed (skip no-op updates like updated_at-only touches)
     IF v_changes IS NOT NULL AND v_changes::text != '{}' THEN
